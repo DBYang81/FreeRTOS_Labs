@@ -1,0 +1,21 @@
+"Task Aware Debugger for GDB" version 11.6.1 (202207200623)
+(c) 2016-2022 NXP Semiconductors, Inc.
+==================================
+18:00:47.419 INFO: [TadModel] DSF session ID 81 has started.
+18:00:50.866 INFO: [TadState] TAD state changed: DEBUG_STARTED -> DEBUG_INIT_0 (RESUMED, USER_REQUEST)
+18:00:50.878 INFO: [TadState] TAD state changed: DEBUG_INIT_0 -> DEBUG_INIT_1 (SUSPENDED, SIGNAL)
+18:00:51.551 INFO: [TadState] TAD state changed: DEBUG_INIT_1 -> DEBUG_SUSPENDED (RESUMED, USER_REQUEST)
+18:00:51.581 INFO: [TadState] TAD state changed: DEBUG_SUSPENDED -> DEBUG_SUSPENDED (SUSPENDED, BREAKPOINT)
+18:00:54.998 INFO: [TadState] TAD state changed: DEBUG_SUSPENDED -> DEBUG_RESUMED (RESUMED, USER_REQUEST)
+18:03:09.182 INFO: [TadState] TAD state changed: DEBUG_RESUMED -> READY (SUSPENDED, SIGNAL)
+18:03:09.418 INFO: [Benchmark] Loading data for "Determine RTOS version" has started.
+18:03:09.436 INFO: [FreeRtosTadModel] Heap type (memory allocation scheme) has been identified from FreeRTOSDebugConfig structure as Heap #3. 
+18:03:09.436 INFO: [FreeRtosTadModel] FreeRTOS version has been identified from FreeRTOSDebugConfig structure as 10.2.0.
+18:03:09.436 INFO: [Benchmark] Loading data for "Determine RTOS version" took 18 ms.
+18:03:09.436 INFO: [Benchmark] Loading data for "Task List" has started.
+18:03:09.722 ERROR: [VariableReader] Could not read variable expression: "ulTotalRunTime".
+18:03:09.722 ERROR: [TaskFactory] ulTotalRunTime not available
+18:03:09.754 ERROR: [VariableReader] Could not read variable expression: "(((struct tskTaskControlBlock *) 0x20030c0)->ulRunTimeCounter)".
+18:03:09.755 INFO: [FreeRTOS] RTOS macro "configGENERATE_RUN_TIME_STATS" is disabled.
+18:03:09.887 INFO: [Benchmark] Loading data for "Task List" took 451 ms.
+18:03:12.993 INFO: [TadModel] DSF session ID 81 has ended.

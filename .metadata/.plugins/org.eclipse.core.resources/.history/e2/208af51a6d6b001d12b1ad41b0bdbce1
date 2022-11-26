@@ -1,0 +1,173 @@
+/*
+===============================================================================
+ Name        : main.c
+ Author      : $(author)
+ Version     :
+ Copyright   : $(copyright)
+ Description : main definition
+===============================================================================
+*/
+
+#if defined (__USE_LPCOPEN)
+#if defined(NO_BOARD_LIB)
+#include "chip.h"
+#else
+#include "board.h"
+#endif
+#endif
+
+#include <cr_section_macros.h>
+
+// TODO: insert other include files here
+
+// TODO: insert other definitions and declarations here
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "heap_lock_monitor.h"
+#include "LpcUart.h"
+#include "ITM_write.h"
+#include "Fmutex.h"
+#include <cstring>
+#include <cstdlib>
+
+/*****************************************************************************
+ * Private types/enumerations/variables
+ ****************************************************************************/
+
+/*****************************************************************************
+ * Public types/enumerations/variables
+ ****************************************************************************/
+
+/*****************************************************************************
+ * Private functions
+ ****************************************************************************/
+
+/* Sets up system hardware */
+static void prvSetupHardware(void)
+{
+	SystemCoreClockUpdate();
+	Board_Init();
+	ITM_init();
+	/* Initial LED0 state is off */
+	Board_LED_Set(0, false);
+}
+
+SemaphoreHandle_t semaphore;
+Fmutex mutx;
+
+
+/* Read input from Terminal by LpcUart */
+static void vReadUart(void *pvParameters) {
+	LpcUart *dbgu = static_cast<LpcUart *>(pvParameters); //convert void ptr to lpcuart ptr by type;
+	int count = 0;
+	char str[61];
+
+	while(1){
+		int bytes = dbgu->read(str+count, 60-count); //lpcUart class returns number of char that has been read, return 0 meaning no char
+		if(bytes > 0){
+			count += bytes;
+			dbgu->write(str+count-bytes, bytes);
+			if(strchr(str, '\r') != NULL || strchr(str, '\n') != NULL || count >= 60){
+				dbgu ->write(str, count);
+				dbgu ->write('\n');
+				mutx.lock();
+				ITM_write("[YOU] ");
+				ITM_write(str);
+				ITM_write("\n");
+				mutx.unlock();
+				for(char ch : str){
+					if(ch == '?')xSemaphoreGive(semaphore);
+				}
+				count = 0;
+			}
+		}
+	}
+}
+
+static void vOracleTask(void *pvParameters){
+	char ans[5] = { {"You are quite lazy to be honest \n"},
+			{"What happen to you this year?\n"},
+			{"Can you be a bit smart to know what to do?\n"},
+			{"Life sometime is so hard, but we still need to move on because hope is bright\n"},
+			{"Hello there\n"}};
+//	Fmutex *mutx = static_cast<Fmutex *>(pvParameters);
+
+	while(1){
+		if(xSemaphoreTake(semaphore, portMAX_DELAY) == pdTRUE){
+			mutx.lock();
+			ITM_write("[Oracle] Hmmm....\n");
+			mutx.unlock();
+			vTaskDelay(3000);
+			mutx.lock();
+			ITM_write("[Oracle] ");
+			ITM_write(ans[rand() % 5]);
+			mutx.unlock();
+			vTaskDelay(2000);
+		}
+	}
+}
+
+/*****************************************************************************
+ * Public functions
+ ****************************************************************************/
+
+/* the following is required if runtime statistics are to be collected */
+extern "C" {
+
+void vConfigureTimerForRunTimeStats( void ) {
+	Chip_SCT_Init(LPC_SCTSMALL1);
+	LPC_SCTSMALL1->CONFIG = SCT_CONFIG_32BIT_COUNTER;
+	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
+}
+
+}
+/* end runtime statictics collection */
+
+/**
+ * @brief	main routine for FreeRTOS blinky example
+ * @return	Nothing, function should not exit
+ */
+int main(void)
+{
+	prvSetupHardware();
+	
+	heap_monitor_setup();
+
+	LpcPinMap none = {-1, -1}; // unused pin has negative values in
+	LpcPinMap txpin = {.port = 0, .pin = 18 }; // transmit pin that goes to debugger's UART->USB converter
+	LpcPinMap rxpin = { .port = 0, .pin = 13 }; // receive pin that goes to debugger's UART->USB converter
+	LpcUartConfig cfg = {
+			.pUART = LPC_USART0,
+			.speed = 115200,
+			.data = UART_CFG_DATALEN_8 | UART_CFG_PARITY_NONE | UART_CFG_STOPLEN_1,
+			.rs485 = false,
+			.tx = txpin,
+			.rx = rxpin,
+			.rts = none,
+			.cts = none
+	};
+
+
+	semaphore = xSemaphoreCreateCounting(5, 0 );
+
+	LpcUart *dbgu = new LpcUart(cfg);
+
+
+	/* LED1 toggle thread */
+	xTaskCreate(vReadUart, "vReadLpcUart",
+				configMINIMAL_STACK_SIZE + 128, &dbgu, (tskIDLE_PRIORITY + 1UL),
+				(TaskHandle_t *) NULL);
+
+	/* UART output thread, simply counts seconds */
+	xTaskCreate(vOracleTask, "vOracleTask",
+				configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 1UL),
+				(TaskHandle_t *) NULL);
+
+	/* Start the scheduler */
+	vTaskStartScheduler();
+
+	/* Should never arrive here */
+	return 1;
+}
+

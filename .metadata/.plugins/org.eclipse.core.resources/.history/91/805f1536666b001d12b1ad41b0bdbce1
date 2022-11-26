@@ -1,0 +1,115 @@
+/*
+===============================================================================
+ Name        : main.c
+ Author      : $(author)
+ Version     :
+ Copyright   : $(copyright)
+ Description : main definition
+===============================================================================
+*/
+
+#if defined (__USE_LPCOPEN)
+#if defined(NO_BOARD_LIB)
+#include "chip.h"
+#else
+#include "board.h"
+#endif
+#endif
+
+#include <cr_section_macros.h>
+
+// TODO: insert other include files here
+
+// TODO: insert other definitions and declarations here
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "heap_lock_monitor.h"
+#include "LpcUart.h"
+#include "ITM_write.h"
+
+
+/*****************************************************************************
+ * Private types/enumerations/variables
+ ****************************************************************************/
+
+/*****************************************************************************
+ * Public types/enumerations/variables
+ ****************************************************************************/
+
+/*****************************************************************************
+ * Private functions
+ ****************************************************************************/
+
+/* Sets up system hardware */
+static void prvSetupHardware(void)
+{
+	SystemCoreClockUpdate();
+	Board_Init();
+	ITM_init();
+	/* Initial LED0 state is off */
+	Board_LED_Set(0, false);
+}
+
+SemaphoreHandle_t semaphore;
+
+/* UART (or output) thread */
+static void vReadUart(void *pvParameters) {
+	LpcUart *dbgu = static_cast<LpcUart *>(pvParamenters);
+	int count = 0;
+	char str[61];
+
+	while(1){
+		int bytes = dbgu->read(str+count, 60-count);
+		if(bytes > 0){
+			count += bytes;
+			dbgu->write(str+count-bytes, bytes);
+
+		}
+	}
+
+}
+
+/*****************************************************************************
+ * Public functions
+ ****************************************************************************/
+
+/* the following is required if runtime statistics are to be collected */
+extern "C" {
+
+void vConfigureTimerForRunTimeStats( void ) {
+	Chip_SCT_Init(LPC_SCTSMALL1);
+	LPC_SCTSMALL1->CONFIG = SCT_CONFIG_32BIT_COUNTER;
+	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
+}
+
+}
+/* end runtime statictics collection */
+
+/**
+ * @brief	main routine for FreeRTOS blinky example
+ * @return	Nothing, function should not exit
+ */
+int main(void)
+{
+	prvSetupHardware();
+	
+	heap_monitor_setup();
+
+	/* LED1 toggle thread */
+	xTaskCreate(vReadUart, "vReadLpcUart",
+				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+				(TaskHandle_t *) NULL);
+
+	/* UART output thread, simply counts seconds */
+	xTaskCreate(vUARTTask, "vTaskUart",
+				configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 1UL),
+				(TaskHandle_t *) NULL);
+
+	/* Start the scheduler */
+	vTaskStartScheduler();
+
+	/* Should never arrive here */
+	return 1;
+}
+

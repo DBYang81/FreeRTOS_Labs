@@ -1,0 +1,5 @@
+../src/lab2_02.cpp:45:13:void prvSetupHardware()	8	static
+../src/lab2_02.cpp:57:13:void vReadFromUart(void*)	24	static
+../src/lab2_02.cpp:74:13:void vBlinkLed(void*)	16	static
+../src/lab2_02.cpp:98:6:void vConfigureTimerForRunTimeStats()	8	static
+../src/lab2_02.cpp:106:5:int main()	16	static

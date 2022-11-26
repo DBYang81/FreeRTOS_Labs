@@ -1,0 +1,25 @@
+"Task Aware Debugger for GDB" version 11.6.1 (202207200623)
+(c) 2016-2022 NXP Semiconductors, Inc.
+==================================
+10:35:08.497 INFO: [TadModel] DSF session ID 1 has started.
+10:35:12.756 INFO: [TadState] TAD state changed: DEBUG_STARTED -> DEBUG_INIT_0 (RESUMED, USER_REQUEST)
+10:35:12.769 INFO: [TadState] TAD state changed: DEBUG_INIT_0 -> DEBUG_INIT_1 (SUSPENDED, SIGNAL)
+10:35:13.453 INFO: [TadState] TAD state changed: DEBUG_INIT_1 -> DEBUG_SUSPENDED (RESUMED, USER_REQUEST)
+10:35:13.493 INFO: [TadState] TAD state changed: DEBUG_SUSPENDED -> DEBUG_SUSPENDED (SUSPENDED, BREAKPOINT)
+10:35:37.627 INFO: [TadState] TAD state changed: DEBUG_SUSPENDED -> DEBUG_RESUMED (RESUMED, USER_REQUEST)
+10:38:02.79 INFO: [TadState] TAD state changed: DEBUG_RESUMED -> READY (SUSPENDED, SIGNAL)
+10:38:02.295 INFO: [Benchmark] Loading data for "Determine RTOS version" has started.
+10:38:02.302 INFO: [FreeRtosTadModel] Heap type (memory allocation scheme) has been identified from FreeRTOSDebugConfig structure as Heap #3. 
+10:38:02.302 INFO: [FreeRtosTadModel] FreeRTOS version has been identified from FreeRTOSDebugConfig structure as 10.2.0.
+10:38:02.302 INFO: [Benchmark] Loading data for "Determine RTOS version" took 7 ms.
+10:38:02.303 INFO: [Benchmark] Loading data for "Task List" has started.
+10:38:02.573 ERROR: [VariableReader] Could not read variable expression: "ulTotalRunTime".
+10:38:02.573 ERROR: [TaskFactory] ulTotalRunTime not available
+10:38:04.95 INFO: [TadModel] DSF session ID 1 has ended.
+10:38:06.590 ERROR: [MemoryReader] Read bytes method timed out!
+10:38:06.592 INFO: [FreeRTOS] RTOS macro "configUSE_MUTEXES" is disabled.
+10:38:06.592 ERROR: [TaskFactory] Cannot read information from "pxDelayedTaskList".
+10:38:06.592 ERROR: [TaskFactory] Cannot read information from "pxOverflowDelayedTaskList".
+10:38:06.593 ERROR: [TaskFactory] Cannot read information from "xSuspendedTaskList".
+10:38:06.593 ERROR: [TaskFactory] Cannot read information from "xPendingReadyList".
+10:38:06.593 INFO: [Benchmark] Loading data for "Task List" took 4290 ms.

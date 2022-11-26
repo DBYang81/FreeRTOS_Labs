@@ -1,0 +1,200 @@
+/*
+===============================================================================
+ Name        : main.c
+ Author      : $(author)
+ Version     :
+ Copyright   : $(copyright)
+ Description : main definition
+===============================================================================
+*/
+
+#if defined (__USE_LPCOPEN)
+#if defined(NO_BOARD_LIB)
+#include "chip.h"
+#else
+#include "board.h"
+#endif
+#endif
+
+#include <cr_section_macros.h>
+
+// TODO: insert other include files here
+
+// TODO: insert other definitions and declarations here
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "heap_lock_monitor.h"
+#include "LpcUart.h"
+#include "DigitalIoPin.h"
+#include <cstring>
+
+/*****************************************************************************
+ * Private types/enumerations/variables
+ ****************************************************************************/
+
+/*****************************************************************************
+ * Public types/enumerations/variables
+ ****************************************************************************/
+
+/*****************************************************************************
+ * Private functions
+ ****************************************************************************/
+
+/* Sets up system hardware */
+static void prvSetupHardware(void)
+{
+	SystemCoreClockUpdate();
+	Board_Init();
+	/* Initial LED0 state is off */
+	Board_LED_Set(0, false);
+}
+
+SemaphoreHandle_t xSemaph;
+static QueueHandle_t xQue;
+
+
+static const int ports[] {0, 0};
+static const int pins [] {0, 17};
+
+
+struct Task{
+	LpcUart *uart;
+	int btn_nr;
+};
+
+
+/* Task1 thread */
+static void vTask1(void *pvParameters) {
+	Task *tsk = static_cast<Task *>(pvParameters);
+	int count = 0;
+	char str[11];
+
+	while(1){
+		int bytes = tsk->uart->read(str+count, 10-count);
+		if(bytes > 0){
+			count += bytes;
+			str[count] = '\0';
+			tsk->uart->write(str+count-bytes, bytes);
+			if(strchr(str, '\r') != NULL || strchr(str, '\n') != NULL){
+				tsk->uart->write(str, count);
+				tsk->uart->write('\n');
+				for(char ch : str){
+					if(ch == '\r') count--;
+					else if(ch == '\n') count--;
+				}
+				unsigned int ucVar = count * sizeof(char);
+				if(xQueueSendToBack(xQue, &ucVar, portMAX_DELAY) != pdTRUE){
+					tsk->uart->write("queue full\r\n");
+				}else{
+					xSemaphoreGive(xSemaph);
+					count = 0;
+				}
+			}
+		}
+	}
+}
+
+/* Task2 thread */
+static void vTask2(void *pvParameters) {
+	Task *tsk = static_cast<Task *>(pvParameters);
+	DigitalIoPin Sw1(ports[tsk->btn_nr],pins[tsk->btn_nr], DigitalIoPin::pullup, true);
+	int FN = -1;
+
+	while(1){
+		if(Sw1.read()){
+			xQueueSendToBack(xQue, &FN, portMAX_DELAY);
+			xSemaphoreGive(xSemaph);
+		}
+	}
+}
+
+/* Task3 thread */
+static void vTask3(void *pvParameters) {
+	Task *tsk = static_cast<Task *>(pvParameters);
+	int buff = 0, sum = 0;
+	while(1){
+		xSemaphoreTake(xSemaph, portMAX_DELAY);
+		if(xQueueReceive(xQue, &buff, portMAX_DELAY) == pdTRUE){
+			if(buff == -1){
+				tsk->uart->write("You have typed %d characters\r\n", sum);
+				xQueueReset(xQue);
+			}else{
+				sum += buff;
+			}
+		}else {
+			tsk->uart->write("did not receive\r\n");
+		}
+		vTaskDelay(1000);
+	}
+}
+
+/*****************************************************************************
+ * Public functions
+ ****************************************************************************/
+
+/* the following is required if runtime statistics are to be collected */
+extern "C" {
+
+void vConfigureTimerForRunTimeStats( void ) {
+	Chip_SCT_Init(LPC_SCTSMALL1);
+	LPC_SCTSMALL1->CONFIG = SCT_CONFIG_32BIT_COUNTER;
+	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
+}
+
+}
+/* end runtime statictics collection */
+
+/**
+ * @brief	main routine for FreeRTOS blinky example
+ * @return	Nothing, function should not exit
+ */
+int main(void)
+{
+	prvSetupHardware();
+	
+	heap_monitor_setup();
+
+	LpcPinMap none = {-1, -1}; // unused pin has negative values in
+		LpcPinMap txpin = {.port = 0, .pin = 18 }; // transmit pin that goes to debugger's UART->USB converter
+		LpcPinMap rxpin = { .port = 0, .pin = 13 }; // receive pin that goes to debugger's UART->USB converter
+		LpcUartConfig cfg = {
+				.pUART = LPC_USART0,
+				.speed = 115200,
+				.data = UART_CFG_DATALEN_8 | UART_CFG_PARITY_NONE | UART_CFG_STOPLEN_1,
+				.rs485 = false,
+				.tx = txpin,
+				.rx = rxpin,
+				.rts = none,
+				.cts = none
+		};
+
+	LpcUart *dbgu = new LpcUart(cfg);
+	xQue = xQueueCreate(5, sizeof(int));
+
+	xSemaph = xSemaphoreCreateCounting(5, 0);
+
+	static Task tsk = {dbgu, 1};
+
+	/* task1 toggle thread */
+	xTaskCreate(vTask1, "vTaskReadUart1",
+				configMINIMAL_STACK_SIZE + 64, &tsk, (tskIDLE_PRIORITY + 1UL),
+				(TaskHandle_t *) NULL);
+
+	/* task2 toggle thread */
+	xTaskCreate(vTask2, "vTaskBtn",
+				configMINIMAL_STACK_SIZE + 64, &tsk, (tskIDLE_PRIORITY + 1UL),
+				(TaskHandle_t *) NULL);
+
+	/* task3 toggle thread */
+	xTaskCreate(vTask3, "vTaskPrint",
+				configMINIMAL_STACK_SIZE + 64, &tsk, (tskIDLE_PRIORITY + 1UL),
+				(TaskHandle_t *) NULL);
+
+	/* Start the scheduler */
+	vTaskStartScheduler();
+
+	/* Should never arrive here */
+	return 1;
+}
+

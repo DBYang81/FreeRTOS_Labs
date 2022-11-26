@@ -1,0 +1,8 @@
+../src/lab1_03.cpp:46:13:void prvSetupHardware()	8	static
+../src/lab1_03.cpp:56:13:void vLEDTask1(void*)	24	static
+../src/lab1_03.cpp:69:13:void vLEDTask2(void*)	24	static
+../src/lab1_03.cpp:82:13:void vUARTTask(void*)	32	static
+../src/lab1_03.cpp:109:6:void vConfigureTimerForRunTimeStats()	8	static
+../src/lab1_03.cpp:122:5:int main()	16	static
+../src/lab1_03.cpp:148:1:void __static_initialization_and_destruction_0(int, int)	24	static
+../src/lab1_03.cpp:148:1:cpp)	8	static

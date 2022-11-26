@@ -1,0 +1,6 @@
+../src/lab2_01.cpp:46:13:void prvSetupHardware()	8	static
+../src/lab2_01.cpp:89:13:void vButtonTask(void*)	96	static
+../src/lab2_01.cpp:155:6:void vConfigureTimerForRunTimeStats()	8	static
+../src/lab2_01.cpp:170:5:int main()	16	static
+../src/lab2_01.cpp:218:1:void __static_initialization_and_destruction_0(int, int)	16	static
+../src/lab2_01.cpp:218:1:cpp)	8	static

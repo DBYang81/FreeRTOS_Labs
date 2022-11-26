@@ -1,0 +1,5 @@
+../src/lab2_03.cpp:47:13:void prvSetupHardware()	8	static
+../src/lab2_03.cpp:66:13:void vReadUart(void*)	104	static
+../src/lab2_03.cpp:96:13:void vOracleTask(void*)	48	static
+../src/lab2_03.cpp:126:6:void vConfigureTimerForRunTimeStats()	8	static
+../src/lab2_03.cpp:139:5:int main()	104	static

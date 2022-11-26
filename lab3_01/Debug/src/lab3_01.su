@@ -1,0 +1,6 @@
+../src/lab3_01.cpp:45:13:void prvSetupHardware()	8	static
+../src/lab3_01.cpp:68:13:void vTask1(void*)	128	static
+../src/lab3_01.cpp:99:13:void vTask2(void*)	48	static
+../src/lab3_01.cpp:114:13:void vTask3(void*)	112	static
+../src/lab3_01.cpp:145:6:void vConfigureTimerForRunTimeStats()	8	static
+../src/lab3_01.cpp:158:5:int main()	104	static
